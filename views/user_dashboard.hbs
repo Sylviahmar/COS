@@ -69,7 +69,7 @@
    .sec1{
 box-sizing: border-box;
     height: 50vh;
-    background-image:url(images/food2.jpg) ;
+    background-image:url('/images/food2.jpg') ;
     padding-left: 30PX;
     padding-top: 90px;
     color: aliceblue;
@@ -135,13 +135,13 @@ box-sizing: border-box;
         <nav class="head">
             <ul class="menu">
                 <li><a href="#" >Home</a> </li>
-                <li><a href="#" >Menu</a> </li>
+                <li><a href="/menu" >Menu</a> </li>
 
                
 
 
             </ul>
-           <a class="user" href="#">{{user.name}}</a>
+           <a class="user" href="/profile">{{user.name}}</a>
            <i class="fa fa-shopping-cart" style="font-size: 28px; color: white;"></i>
         </nav>
 
@@ -162,14 +162,6 @@ box-sizing: border-box;
 
         </div>
     </div>
-    <script>
-    
-        var login_btn = document.getElementsByClassName("login_btn");
-
-// Add click event listener to the first element with that class
-login_btn[0].addEventListener("click", function() {
-  window.location.href = "sign_up.html"; // or your actual signup page
-});
-    </script>
+   
 </body>
 </html>
