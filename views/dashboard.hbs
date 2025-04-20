@@ -6,24 +6,27 @@
     <title>dashboard</title>
 </head>
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&display=swap');
     *{
         margin: 0;
     }
     body{
-        background-color: #362E21;
+        background-color: #000000;
+        font-family: 'Cormorant Garamond', serif;
        
-    }
-   .head{
-
-    display: flex;
-    height: 50px;
-    background-color: #000000;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    
-
-   
+    }   
+  .head {
+        display: flex;
+        height: 5vh;
+        background-color: rgba(0, 0, 0, 0.8); /* Transparent background */
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        position: fixed; /* Fixed position */
+        top: 0;
+        width: 100%;
+        z-index: 1000; /* Ensure navbar stays on top */
+        backdrop-filter: blur(5px); /* Optional: adds blur effect behind navbar */
    }
    .login_btn{
     background-color: white;
@@ -31,7 +34,7 @@
     width: 120px;
     border-radius: 8dp;
     position: absolute;
-    right: 20px;
+    right: 60px;
     border-radius: 8px;
     font-weight: bold;
     cursor: pointer;
@@ -57,17 +60,23 @@
     text-decoration: none;
     color: white;
    }
-   .sec1{
-box-sizing: border-box;
-    height: 50vh;
-   background-image: url('/images/food2.jpg');
+  .sec1{
+    box-sizing: border-box;
+    display: flex;
+    height: 90vh;
+    background-image:url('/images/food2.jpg') ;
     padding-left: 30PX;
     padding-top: 90px;
     color: aliceblue;
-    
-    -webkit-text-stroke: #000000 .5px;
+   background-size: cover;
     font-size: 40px;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    
 
+
+  
    }
  
    .sec_view{
@@ -90,6 +99,8 @@ box-sizing: border-box;
     padding:60px ;
     align-items: center;
     justify-content: center;
+    border: 1px solid white;
+
    }
    .sec3{
     display: flex;
@@ -102,7 +113,7 @@ box-sizing: border-box;
     padding:60px ;
     align-items: center;
     justify-content: center;
-    
+     border: 1px solid white;
    }
 
  
