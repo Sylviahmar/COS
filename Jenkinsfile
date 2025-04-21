@@ -1,40 +1,40 @@
 pipeline {
     agent any
-
+    environment {
+        DOCKER_IMAGE = 'your_image_name'  // Update with your image name
+    }
     stages {
         stage('Checkout') {
             steps {
                 echo 'Checking out code...'
-                checkout([ 
-                    $class: 'GitSCM', 
-                    branches: [[name: '*/main']], 
-                    extensions: [], 
-                    userRemoteConfigs: [[ 
-                        url: 'https://github.com/Sylviahmar/COS.git', 
-                        credentialsId: 'my-github-token' 
-                    ]] 
-                ])
+                git branch: 'main', url: 'https://github.com/Sylviahmar/COS.git'
             }
         }
-
         stage('Build') {
             steps {
                 echo 'Building Docker Compose services...'
-                bat 'docker-compose -p todolist1 build'
+                // Use sh instead of bat for Linux/Unix-based environments
+                sh '''
+                docker-compose -f docker-compose.yml build
+                '''
             }
         }
-
-        stage('Run Tests') {
-            steps {
-                echo 'Skipping tests for now...'
-            }
-        }
-
         stage('Deploy') {
             steps {
-                echo 'Deploying the application using Docker Compose...'
-                bat 'docker-compose -p todolist1 up -d'
+                echo 'Deploying application...'
+                // Use sh for running Docker Compose up
+                sh '''
+                docker-compose -f docker-compose.yml up -d
+                '''
             }
+        }
+    }
+    post {
+        always {
+            echo 'Cleaning up Docker Compose services...'
+            sh '''
+            docker-compose -f docker-compose.yml down
+            '''
         }
     }
 }
