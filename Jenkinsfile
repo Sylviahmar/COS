@@ -1,48 +1,65 @@
+jenkinsfile
 pipeline {
     agent any
 
     environment {
-        GIT_REPO = 'https://github.com/Sylviahmar/COS.git'  // Replace with your actual repo
+        IMAGE_NAME = "chatapp"
+        IMAGE_TAG = "v1"
+        FULL_IMAGE_NAME = "${IMAGE_NAME}:${IMAGE_TAG}"
+        CONTAINER_NAME = "chatapp_container"
+        GIT_REPO_URL = 'https://github.com/Sylviahmar/COS.git'
+        GIT_CREDENTIALS_ID = 'github-deploy-token'  // Use the correct credentials ID for Jenkins
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Use Jenkins credentials securely
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[
-                        url: "${env.GIT_REPO}",
-                        credentialsId: 'github-deploy-token'
-                    ]]
+                echo 'Checking out code from GitHub...'
+                checkout([ 
+                    $class: 'GitSCM', 
+                    branches: [[name: '*/main']], 
+                    extensions: [], 
+                    userRemoteConfigs: [[ 
+                        url: GIT_REPO_URL, 
+                        credentialsId: GIT_CREDENTIALS_ID 
+                    ]] 
                 ])
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t selenium-test-runner .'
+                echo 'Building Docker image...'
+                script {
+                    sh 'docker build -t $FULL_IMAGE_NAME .'
+                }
             }
         }
 
-        stage('Run Tests with Docker Compose') {
+        stage('Run Tests') {
             steps {
-                sh 'docker-compose up --abort-on-container-exit'
+                echo 'Running tests (if any)...'
+                // You can include test running commands here
+                // Example: sh 'docker run --rm $FULL_IMAGE_NAME test'
             }
         }
 
-        stage('Archive Results') {
+        stage('Deploy') {
             steps {
-                // Only if you export JUnit XML format test reports
-                junit 'reports/*.xml'
+                echo 'Deploying application using Docker Compose...'
+                script {
+                    sh 'docker-compose -f docker-compose.yml up -d'
+                }
             }
         }
-    }
 
-    post {
-        always {
-            sh 'docker-compose down'
+        stage('Cleanup Old Container (Optional)') {
+            steps {
+                echo 'Cleaning up old containers...'
+                script {
+                    sh "docker rm -f $CONTAINER_NAME || true"
+                }
+            }
         }
     }
 }
