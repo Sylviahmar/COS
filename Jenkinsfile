@@ -1,74 +1,64 @@
 pipeline {
     agent any
-    
+
+    environment {
+        IMAGE_NAME = "chatapp"
+        IMAGE_TAG = "v1"
+        FULL_IMAGE_NAME = "${IMAGE_NAME}:${IMAGE_TAG}"
+        CONTAINER_NAME = "chatapp_container"
+        GIT_REPO_URL = 'https://github.com/Sylviahmar/COS.git'
+        GIT_CREDENTIALS_ID = 'my-github-token'  // Use the correct credentials ID for Jenkins
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                echo "Checking out code..."
-                checkout scm
-                sh 'ls -la'
+                echo 'Checking out code from GitHub...'
+                checkout([ 
+                    $class: 'GitSCM', 
+                    branches: [[name: '*/main']], 
+                    extensions: [], 
+                    userRemoteConfigs: [[ 
+                        url: GIT_REPO_URL, 
+                        credentialsId: GIT_CREDENTIALS_ID 
+                    ]] 
+                ])
             }
         }
-        
-        stage('Build') {
+
+        stage('Build Docker Image') {
             steps {
-                echo "Building application..."
-                sh '''
-                # Simple check if Docker exists
-                which docker || echo "Docker not found"
-                
-                # Simple docker build without fancy options
-                docker build -t simple-app:latest .
-                '''
+                echo 'Building Docker image...'
+                script {
+                    sh 'docker build -t $FULL_IMAGE_NAME .'
+                }
             }
         }
-        
-        stage('Test') {
+
+        stage('Run Tests') {
             steps {
-                echo "Running basic tests..."
-                sh '''
-                # Run the container in detached mode
-                docker run -d --name test-container -p 8080:80 simple-app:latest
-                
-                # Check if it's running
-                docker ps | grep test-container
-                
-                # Stop and remove the container
-                docker stop test-container
-                docker rm test-container
-                '''
+                echo 'Running tests (if any)...'
+                // You can include test running commands here
+                // Example: sh 'docker run --rm $FULL_IMAGE_NAME test'
             }
         }
-        
+
         stage('Deploy') {
             steps {
-                echo "Deploying application..."
-                sh '''
-                # Stop any existing container
-                docker stop prod-container || true
-                docker rm prod-container || true
-                
-                # Run the new container
-                docker run -d --name prod-container -p 80:80 simple-app:latest
-                
-                # Verify deployment
-                docker ps | grep prod-container
-                '''
+                echo 'Deploying application using Docker Compose...'
+                script {
+                    sh 'docker-compose -f docker-compose.yml up -d'
+                }
             }
         }
-    }
-    
-    post {
-        always {
-            echo "Cleaning up..."
-            sh '''
-            # Clean up test containers
-            docker stop test-container || true
-            docker rm test-container || true
-            
-            # Clean up resources
-            docker system prune -f || true
-            '''
+
+        stage('Cleanup Old Container (Optional)') {
+            steps {
+                echo 'Cleaning up old containers...'
+                script {
+                    sh "docker rm -f $CONTAINER_NAME || true"
+                }
+            }
         }
     }
 }
