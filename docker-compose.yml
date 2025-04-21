@@ -7,7 +7,7 @@ services:
     image: ${APP_NAME:-chatapp}:v${APP_VERSION:-latest}
     container_name: ${APP_NAME:-chatapp}
     ports:
-      - "3000:3000"
+      - "3001:3000"
     restart: unless-stopped
     networks:
       - app-network
