@@ -56,7 +56,13 @@ pipeline {
             steps {
                 echo 'Deploying application using Docker Compose...'
                 script {
-                    sh "docker-compose -f docker-compose.yml down || true"
+                    // Bring down any existing containers and orphaned ones
+                    sh "docker-compose -f docker-compose.yml down --remove-orphans || true"
+
+                    // Explicitly remove the container named 'chatapp' if it somehow still exists
+                    sh "docker rm -f chatapp || true"
+
+                    // Rebuild and bring up the application
                     sh "docker-compose -f docker-compose.yml up -d --build"
                 }
             }
