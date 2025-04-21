@@ -1,64 +1,43 @@
 pipeline {
-    agent any
+  agent any
 
-    environment {
-        IMAGE_NAME = "chatapp"
-        IMAGE_TAG = "v1"
-        FULL_IMAGE_NAME = "${IMAGE_NAME}:${IMAGE_TAG}"
-        CONTAINER_NAME = "chatapp_container"
-        GIT_REPO_URL = 'https://github.com/Sylviahmar/COS.git'
-        GIT_CREDENTIALS_ID = 'my-github-token'  // Use the correct credentials ID for Jenkins
+  environment {
+    IMAGE_NAME = "chatapp"
+    CONTAINER_NAME = "chatapp"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                echo 'Checking out code from GitHub...'
-                checkout([ 
-                    $class: 'GitSCM', 
-                    branches: [[name: '*/main']], 
-                    extensions: [], 
-                    userRemoteConfigs: [[ 
-                        url: GIT_REPO_URL, 
-                        credentialsId: GIT_CREDENTIALS_ID 
-                    ]] 
-                ])
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                echo 'Building Docker image...'
-                script {
-                    sh 'docker build -t $FULL_IMAGE_NAME .'
-                }
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                echo 'Running tests (if any)...'
-                // You can include test running commands here
-                // Example: sh 'docker run --rm $FULL_IMAGE_NAME test'
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                echo 'Deploying application using Docker Compose...'
-                script {
-                    sh 'docker-compose -f docker-compose.yml up -d'
-                }
-            }
-        }
-
-        stage('Cleanup Old Container (Optional)') {
-            steps {
-                echo 'Cleaning up old containers...'
-                script {
-                    sh "docker rm -f $CONTAINER_NAME || true"
-                }
-            }
-        }
+    stage('Build Docker Image') {
+      steps {
+        sh 'docker build -t $IMAGE_NAME .'
+      }
     }
+
+    stage('Run Tests') {
+      steps {
+        sh 'echo "No tests to run"'
+      }
+    }
+
+    stage('Deploy') {
+      steps {
+        sh '''
+          docker rm -f $CONTAINER_NAME || true
+          docker run -d --name $CONTAINER_NAME -p 3000:3000 $IMAGE_NAME
+        '''
+      }
+    }
+
+    stage('Cleanup Old Container (Optional)') {
+      steps {
+        echo 'Cleanup already handled before deploy stage.'
+      }
+    }
+  }
 }
