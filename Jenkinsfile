@@ -1,34 +1,48 @@
 pipeline {
     agent any
 
+    environment {
+        GIT_REPO = 'https://github.com/Sylviahmar/COS.git'  // Replace with your actual repo
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Sylviahmar/COS.git'
+                // Use Jenkins credentials securely
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: "${env.GIT_REPO}",
+                        credentialsId: 'github-deploy-token'
+                    ]]
+                ])
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Building...'
-                // Add actual build commands here (if needed)
+                sh 'docker build -t selenium-test-runner .'
             }
         }
 
-        stage('Test') {
+        stage('Run Tests with Docker Compose') {
             steps {
-                echo 'Running tests...'
-                // You can run Selenium tests here later
+                sh 'docker-compose up --abort-on-container-exit'
             }
         }
 
-        stage('Deploy') {
+        stage('Archive Results') {
             steps {
-                echo 'Deploying to server...'
-                // Example: deploy using SCP, Rsync, or move to a folder
-                // For example, to copy files to a server:
-                // sh 'scp -r * username@yourserver:/path/to/deploy'
+                // Only if you export JUnit XML format test reports
+                junit 'reports/*.xml'
             }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker-compose down'
         }
     }
 }
