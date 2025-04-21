@@ -1,49 +1,21 @@
 version: '3.8'
 
 services:
-  backend:
-    image: backend:v1
-    container_name: COS_container
-    restart: unless-stopped
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/cos_db
-      - DEBUG=False
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-    networks:
-      - cos-network
-
-  frontend:
-    image: react-frontend:v1
-    container_name: cos_frontend
-    restart: unless-stopped
+  webapp:
+    image: ${APP_NAME:-chatapp}:v${APP_VERSION:-latest}
+    container_name: ${APP_NAME:-chatapp}
     ports:
       - "80:80"
-    depends_on:
-      - backend
-    networks:
-      - cos-network
-
-  db:
-    image: postgres:13
-    container_name: cos_database
     restart: unless-stopped
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=cos_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     networks:
-      - cos-network
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 networks:
-  cos-network:
+  app-network:
     driver: bridge
-
-volumes:
-  postgres_data:
