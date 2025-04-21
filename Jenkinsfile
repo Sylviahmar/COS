@@ -1,6 +1,6 @@
 pipeline {
     agent any
-
+    
     environment {
         IMAGE_NAME = "backend"
         IMAGE_TAG = "v1"
@@ -9,23 +9,23 @@ pipeline {
         GIT_REPO_URL = 'https://github.com/Sylviahmar/COS.git'  // Replace with your actual repo URL
         GIT_CREDENTIALS_ID = 'github-token'  // Use the correct credentials ID for Jenkins
     }
-
+    
     stages {
         stage('Checkout') {
             steps {
                 echo 'Checking out code from GitHub...'
-                checkout([ 
-                    $class: 'GitSCM', 
-                    branches: [[name: '*/main']], 
-                    extensions: [], 
-                    userRemoteConfigs: [[ 
-                        url: GIT_REPO_URL, 
-                        credentialsId: GIT_CREDENTIALS_ID 
-                    ]] 
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    extensions: [],
+                    userRemoteConfigs: [[
+                        url: GIT_REPO_URL,
+                        credentialsId: GIT_CREDENTIALS_ID
+                    ]]
                 ])
             }
         }
-
+        
         stage('Build React Frontend Docker Image') {
             steps {
                 echo 'Building React frontend Docker image...'
@@ -34,7 +34,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Build Selenium Tests Docker Image') {
             steps {
                 echo 'Building Selenium tests Docker image...'
@@ -43,7 +43,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Run Selenium Tests') {
             steps {
                 echo 'Running Selenium tests...'
@@ -52,7 +52,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Deploy with Docker Compose') {
             steps {
                 echo 'Deploying application using Docker Compose...'
@@ -61,7 +61,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Cleanup Old Containers (Optional)') {
             steps {
                 echo 'Cleaning up old containers...'
@@ -71,7 +71,7 @@ pipeline {
             }
         }
     }
-
+    
     post {
         always {
             echo 'Cleaning up Docker resources...'
