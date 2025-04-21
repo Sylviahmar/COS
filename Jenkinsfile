@@ -1,126 +1,64 @@
 pipeline {
     agent any
-    
+
     environment {
-        // Define environment variables here
-        DOCKER_REGISTRY = "your-registry-url"
-        APP_VERSION = "${BUILD_NUMBER}"
+        IMAGE_NAME = "chatapp"
+        IMAGE_TAG = "v1"
+        FULL_IMAGE_NAME = "${IMAGE_NAME}:${IMAGE_TAG}"
+        CONTAINER_NAME = "chatapp_container"
+        GIT_REPO_URL = 'https://github.com/Sylviahmar/COS.git'
+        GIT_CREDENTIALS_ID = 'my-github-token'  // Use the correct credentials ID for Jenkins
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
-                echo "Checking out code from GitHub..."
-                checkout scm
-                
-                // Verify repository structure
-                sh 'ls -la'
+                echo 'Checking out code from GitHub...'
+                checkout([ 
+                    $class: 'GitSCM', 
+                    branches: [[name: '*/main']], 
+                    extensions: [], 
+                    userRemoteConfigs: [[ 
+                        url: GIT_REPO_URL, 
+                        credentialsId: GIT_CREDENTIALS_ID 
+                    ]] 
+                ])
             }
         }
-        
-        stage('Install Dependencies') {
+
+        stage('Build Docker Image') {
             steps {
-                echo "Installing required dependencies..."
-                // Install docker-compose if not available
-                sh '''
-                if ! command -v docker-compose &> /dev/null; then
-                    echo "Installing docker-compose..."
-                    curl -L "https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                    chmod +x /usr/local/bin/docker-compose
-                fi
-                '''
-            }
-        }
-        
-        stage('Build Frontend Docker Image') {
-            steps {
-                echo "Building React frontend Docker image..."
+                echo 'Building Docker image...'
                 script {
-                    // Verify directory exists before attempting to build
-                    sh '''
-                    if [ -d "./frontend" ]; then
-                        docker build -t react-frontend:${APP_VERSION} ./frontend
-                    else
-                        echo "Frontend directory not found. Creating required structure..."
-                        mkdir -p frontend
-                        echo "ERROR: Frontend code is missing. Please add it to the repository."
-                        exit 1
-                    fi
-                    '''
+                    sh 'docker build -t $FULL_IMAGE_NAME .'
                 }
             }
         }
-        
-        stage('Build Test Docker Image') {
-            steps {
-                echo "Building Selenium tests Docker image..."
-                script {
-                    sh '''
-                    if [ -d "./tests" ]; then
-                        docker build -t selenium-tests:${APP_VERSION} ./tests
-                    else
-                        echo "Tests directory not found. Creating required structure..."
-                        mkdir -p tests
-                        echo "ERROR: Test code is missing. Please add it to the repository."
-                        exit 1
-                    fi
-                    '''
-                }
-            }
-        }
-        
+
         stage('Run Tests') {
             steps {
-                echo "Running Selenium tests..."
+                echo 'Running tests (if any)...'
+                // You can include test running commands here
+                // Example: sh 'docker run --rm $FULL_IMAGE_NAME test'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying application using Docker Compose...'
                 script {
-                    try {
-                        // Start the application services
-                        sh 'docker-compose up -d'
-                        
-                        // Wait for services to be ready
-                        sh 'sleep 10'
-                        
-                        // Run tests
-                        sh 'docker run --network=host selenium-tests:${APP_VERSION}'
-                        
-                    } catch (Exception e) {
-                        echo "Tests failed: ${e.message}"
-                        currentBuild.result = 'UNSTABLE'
-                    }
+                    sh 'docker-compose -f docker-compose.yml up -d'
                 }
             }
         }
-        
-        stage('Deploy Application') {
-            when {
-                expression { currentBuild.resultIsBetterOrEqualTo('UNSTABLE') }
-            }
+
+        stage('Cleanup Old Container (Optional)') {
             steps {
-                echo "Deploying with Docker Compose..."
-                sh 'docker-compose up -d --build'
-                
-                // Wait for deployment to complete
-                sh 'sleep 10'
-                
-                // Verify deployment
-                sh 'docker-compose ps'
+                echo 'Cleaning up old containers...'
+                script {
+                    sh "docker rm -f $CONTAINER_NAME || true"
+                }
             }
-        }
-    }
-    
-    post {
-        always {
-            echo "Cleaning up Docker resources..."
-            sh 'docker-compose down || true'
-            
-            // Clean up unused images to save disk space
-            sh 'docker system prune -f || true'
-        }
-        success {
-            echo "Pipeline completed successfully!"
-        }
-        failure {
-            echo "Pipeline failed. Please check the logs for details."
         }
     }
 }
