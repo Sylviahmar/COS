@@ -5,7 +5,7 @@
   "scripts": {
     "build": "echo 'No build needed for backend'",
     "start": "node src/app.js",
-    "deploy": "gh-pages -d public"
+    "deploy": "echo \"This is a placeholder for deployment script\""
   },
   "keywords": [],
   "author": "",
