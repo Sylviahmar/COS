@@ -2,18 +2,11 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME_FRONTEND = "react-frontend"
-        IMAGE_TAG_FRONTEND = "v1"
-        FULL_IMAGE_NAME_FRONTEND = "${IMAGE_NAME_FRONTEND}:${IMAGE_TAG_FRONTEND}"
-
-        IMAGE_NAME_TESTS = "selenium-tests"
-        IMAGE_TAG_TESTS = "v1"
-        FULL_IMAGE_NAME_TESTS = "${IMAGE_NAME_TESTS}:${IMAGE_TAG_TESTS}"
-
-        CONTAINER_NAME_FRONTEND = "react-frontend-container"
-        CONTAINER_NAME_TESTS = "selenium-test-container"
-
-        GIT_REPO_URL = 'https://github.com/Sylviahmar/COS.git'  // Your GitHub repo URL
+        IMAGE_NAME = "backend"
+        IMAGE_TAG = "v1"
+        FULL_IMAGE_NAME = "${IMAGE_NAME}:${IMAGE_TAG}"
+        CONTAINER_NAME = "COS_container"
+        GIT_REPO_URL = 'https://github.com/Sylviahmar/COS.git'  // Replace with your actual repo URL
         GIT_CREDENTIALS_ID = 'github-deploy-token'  // Use the correct credentials ID for Jenkins
     }
 
@@ -24,6 +17,7 @@ pipeline {
                 checkout([ 
                     $class: 'GitSCM', 
                     branches: [[name: '*/main']], 
+                    extensions: [], 
                     userRemoteConfigs: [[ 
                         url: GIT_REPO_URL, 
                         credentialsId: GIT_CREDENTIALS_ID 
@@ -36,16 +30,16 @@ pipeline {
             steps {
                 echo 'Building React frontend Docker image...'
                 script {
-                    sh 'docker build -t $FULL_IMAGE_NAME_FRONTEND ./frontend'
+                    sh 'docker build -t react-frontend:v1 ./frontend'  // Adjust path to your frontend directory
                 }
             }
         }
 
         stage('Build Selenium Tests Docker Image') {
             steps {
-                echo 'Building Selenium test runner Docker image...'
+                echo 'Building Selenium tests Docker image...'
                 script {
-                    sh 'docker build -t $FULL_IMAGE_NAME_TESTS ./tests'
+                    sh 'docker build -t selenium-tests:v1 ./tests/selenium'  // Adjust path to your Selenium test directory
                 }
             }
         }
@@ -54,7 +48,7 @@ pipeline {
             steps {
                 echo 'Running Selenium tests...'
                 script {
-                    sh 'docker run --rm $FULL_IMAGE_NAME_TESTS'
+                    sh 'docker run --rm selenium-tests:v1'  // This will run your tests inside a container
                 }
             }
         }
@@ -63,7 +57,7 @@ pipeline {
             steps {
                 echo 'Deploying application using Docker Compose...'
                 script {
-                    sh 'docker-compose -f docker-compose.yml up -d'
+                    sh 'docker-compose -f docker-compose.yml up -d'  // Make sure the compose file is in the root directory
                 }
             }
         }
@@ -72,8 +66,7 @@ pipeline {
             steps {
                 echo 'Cleaning up old containers...'
                 script {
-                    sh "docker rm -f $CONTAINER_NAME_FRONTEND || true"
-                    sh "docker rm -f $CONTAINER_NAME_TESTS || true"
+                    sh "docker rm -f $CONTAINER_NAME || true"
                 }
             }
         }
@@ -82,7 +75,13 @@ pipeline {
     post {
         always {
             echo 'Cleaning up Docker resources...'
-            sh 'docker-compose down'
+            sh 'docker-compose down'  // Clean up after deployment
+        }
+        success {
+            echo 'Deployment completed successfully!'
+        }
+        failure {
+            echo 'Deployment failed. Investigate the error.'
         }
     }
 }

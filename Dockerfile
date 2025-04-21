@@ -3,7 +3,7 @@ FROM node:16-slim
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV PORT=3000  #Use port 3000 as per docker-compose.yml
+ENV PORT=3000  
 
 # Set work directory
 WORKDIR /app
