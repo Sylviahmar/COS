@@ -1,22 +1,27 @@
-# Use official Node.js image
-FROM node:16-slim
+# Frontend Dockerfile
+FROM node:16 as build
 
-# Set environment variables
-ENV NODE_ENV=production
-ENV PORT=3000  
-
-# Set work directory
 WORKDIR /app
 
-# Install dependencies
-COPY package*.json ./
+# Copy package.json and install dependencies
+COPY package.json package-lock.json* ./
 RUN npm install
 
-# Copy project files
+# Copy the rest of the frontend code
 COPY . .
 
-# Expose default port (3000 for React app)
-EXPOSE 3000
+# Build the React application
+RUN npm run build
 
-# Start the application
-CMD ["npm", "start"]
+# Production stage
+FROM nginx:alpine
+
+# Copy the build output to replace the default nginx contents
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Copy custom nginx config if needed
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

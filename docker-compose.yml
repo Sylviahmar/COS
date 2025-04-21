@@ -1,61 +1,49 @@
 version: '3.8'
 
 services:
-  # React App
-  frontend:
-    build:
-      context: ./frontend    # ⬅️ Path to your React app
-    command: npm start
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-      - PORT=3000
-    depends_on:
-      - mongodb
-      - redis
-
-  # Selenium test runner
-  selenium-tests:
-    build:
-      context: ./tests        # ⬅️ Path to your Python Selenium scripts
-    depends_on:
-      - frontend
-    environment:
-      - SELENIUM_URL=http://frontend:3000
-
-  # MongoDB database
-  mongodb:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-    volumes:
-      - mongodb_data:/data/db
-
-  # Redis cache (optional)
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-
-  # Jenkins CI server with Docker access
-  jenkins:
-    image: jenkins/jenkins:lts
-    container_name: jenkins
-    user: root
-    ports:
-      - "8080:8080"
-      - "50000:50000"
-    volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
+  backend:
+    image: backend:v1
+    container_name: COS_container
     restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/cos_db
+      - DEBUG=False
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - cos-network
+
+  frontend:
+    image: react-frontend:v1
+    container_name: cos_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - cos-network
+
+  db:
+    image: postgres:13
+    container_name: cos_database
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=cos_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - cos-network
+
+networks:
+  cos-network:
+    driver: bridge
 
 volumes:
-  mongodb_data:
-  jenkins_home:
+  postgres_data:
