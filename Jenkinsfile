@@ -7,7 +7,7 @@ pipeline {
         FULL_IMAGE_NAME = "${IMAGE_NAME}:${IMAGE_TAG}"
         CONTAINER_NAME = "COS_container"
         GIT_REPO_URL = 'https://github.com/Sylviahmar/COS.git'  // Replace with your actual repo URL
-        GIT_CREDENTIALS_ID = 'github-token'  // Use the correct credentials ID for Jenkins
+        GIT_CREDENTIALS_ID = 'my-github-token'  // Use the correct credentials ID for Jenkins
     }
     
     stages {
