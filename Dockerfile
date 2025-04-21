@@ -1,24 +1,22 @@
-# Use official Python image
-FROM python:3.10-slim
+# Use official Node.js image
+FROM node:16-slim
 
-# Set working directory
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000  #Use port 3000 as per docker-compose.yml
+
+# Set work directory
 WORKDIR /app
 
-# Copy test script and requirements
+# Install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy project files
 COPY . .
 
-# Install dependencies
-RUN pip install --upgrade pip \
-    && pip install selenium \
-    && apt-get update && apt-get install -y wget unzip \
-    && wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip \
-    && unzip chromedriver_linux64.zip \
-    && mv chromedriver /usr/local/bin/chromedriver \
-    && chmod +x /usr/local/bin/chromedriver \
-    && apt-get install -y chromium
+# Expose default port (3000 for React app)
+EXPOSE 3000
 
-# Set environment variable for Chrome
-ENV CHROME_BIN=/usr/bin/chromium
-
-# Run tests
-CMD ["python", "test_survey_website.py"]
+# Start the application
+CMD ["npm", "start"]

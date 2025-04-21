@@ -1,19 +1,61 @@
 version: '3.8'
 
 services:
-  react-app:
+  # React App
+  frontend:
     build:
-      context: ./frontend   # Adjust path to your React app
+      context: ./frontend    # ⬅️ Path to your React app
+    command: npm start
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
     environment:
       - CHOKIDAR_USEPOLLING=true
-    command: ["npm", "start"]
+      - PORT=3000
+    depends_on:
+      - mongodb
+      - redis
 
+  # Selenium test runner
   selenium-tests:
     build:
-      context: .
+      context: ./tests        # ⬅️ Path to your Python Selenium scripts
     depends_on:
-      - react-app
+      - frontend
     environment:
-      - SELENIUM_URL=http://react-app:3000
+      - SELENIUM_URL=http://frontend:3000
+
+  # MongoDB database
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - mongodb_data:/data/db
+
+  # Redis cache (optional)
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  # Jenkins CI server with Docker access
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+  jenkins_home:
