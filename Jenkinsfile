@@ -1,35 +1,68 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = "chatapp"
+        IMAGE_TAG = "v1"
+        FULL_IMAGE_NAME = "${IMAGE_NAME}:${IMAGE_TAG}"
+        CONTAINER_NAME = "chatapp_container"
+        GIT_REPO_URL = 'https://github.com/Sylviahmar/COS.git'
+        GIT_CREDENTIALS_ID = 'my-github-token'  // Use the correct credentials ID for Jenkins
+    }
+
     stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out code from GitHub...'
+                checkout([ 
+                    $class: 'GitSCM', 
+                    branches: [[name: '*/main']], 
+                    extensions: [], 
+                    userRemoteConfigs: [[ 
+                        url: GIT_REPO_URL, 
+                        credentialsId: GIT_CREDENTIALS_ID 
+                    ]] 
+                ])
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t chatapp:v1 .'
+                echo 'Building Docker image...'
+                script {
+                    sh 'docker build -t $FULL_IMAGE_NAME .'
+                }
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'echo "Running tests..."'
+                echo 'Running tests (if any)...'
+                // Example test command:
+                // sh 'docker run --rm $FULL_IMAGE_NAME npm test'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying container using docker-compose...'
+                echo 'Deploying application using Docker Compose...'
                 script {
+                    // First stop and remove any previous containers
                     sh 'docker-compose down || true'
-                    sh 'docker-compose up -d --build'
+
+                    // Then deploy the app
+                    sh 'docker-compose -f docker-compose.yml up -d --build'
                 }
             }
         }
 
         stage('Cleanup Old Container (Optional)') {
             steps {
-                echo 'Cleaning up old Docker containers...'
+                echo 'Cleaning up old containers...'
                 script {
+                    // Clean up any container matching the name (optional if using docker-compose down)
                     sh '''
-                        docker ps -aq --filter "name=chatapp" | xargs -r docker rm -f || true
+                        docker ps -aq --filter "name=$CONTAINER_NAME" | xargs -r docker rm -f || true
                     '''
                 }
             }
