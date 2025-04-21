@@ -39,18 +39,21 @@ pipeline {
         }
 
         stage('Deploy') {
-    steps {
-        echo 'Deploying the application using Docker Compose...'
-        script {
-            // Stop and remove existing containers, volumes, and networks
-            sh """
-                docker-compose -p todolist1 down --remove-orphans
-                docker-compose -p todolist1 up -d --build
-            """
+            steps {
+                echo 'Deploying the application using Docker Compose...'
+                script {
+                    // ✅ ADD: Remove existing container first to avoid conflict
+                    sh 'docker rm -f chatapp || true'
+
+                    // Stop and remove existing containers, volumes, and networks
+                    sh """
+                        docker-compose -p todolist1 down --remove-orphans
+                        docker-compose -p todolist1 up -d --build
+                    """
+                }
+            }
         }
     }
-}
-
 
     post {
         always {
