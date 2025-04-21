@@ -3,43 +3,37 @@ pipeline {
 
     environment {
         IMAGE_NAME = "chatapp"
-        IMAGE_TAG = "v1"
-        FULL_IMAGE_NAME = "${IMAGE_NAME}:${IMAGE_TAG}"
-        CONTAINER_NAME = "chatapp_container"
-        GIT_REPO_URL = 'https://github.com/Sylviahmar/COS.git'
-        GIT_CREDENTIALS_ID = 'my-github-token'  // Use the correct credentials ID for Jenkins
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo 'Checking out code from GitHub...'
-                checkout([ 
-                    $class: 'GitSCM', 
-                    branches: [[name: '*/main']], 
-                    extensions: [], 
-                    userRemoteConfigs: [[ 
-                        url: GIT_REPO_URL, 
-                        credentialsId: GIT_CREDENTIALS_ID 
-                    ]] 
-                ])
+                echo 'Cloning repository...'
+                checkout scm
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Install') {
             steps {
-                echo 'Building Docker image...'
+                echo 'Installing dependencies...'
+                sh 'npm install'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building the application...'
+                sh 'npm run build'
+            }
+        }
+
+        stage('Cleanup Old Container (Optional)') {
+            steps {
+                echo 'Removing existing Docker container (if any)...'
                 script {
-                    sh 'docker build -t $FULL_IMAGE_NAME .'
+                    // Attempt to stop and remove the existing container
+                    sh 'docker rm -f ${IMAGE_NAME} || true'
                 }
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                echo 'Running tests (if any)...'
-                // Example test command:
-                // sh 'docker run --rm $FULL_IMAGE_NAME npm test'
             }
         }
 
@@ -47,25 +41,19 @@ pipeline {
             steps {
                 echo 'Deploying application using Docker Compose...'
                 script {
-                    // First stop and remove any previous containers
-                    sh 'docker-compose down || true'
-
-                    // Then deploy the app
+                    sh 'docker-compose -f docker-compose.yml down || true'
                     sh 'docker-compose -f docker-compose.yml up -d --build'
                 }
             }
         }
+    }
 
-        stage('Cleanup Old Container (Optional)') {
-            steps {
-                echo 'Cleaning up old containers...'
-                script {
-                    // Clean up any container matching the name (optional if using docker-compose down)
-                    sh '''
-                        docker ps -aq --filter "name=$CONTAINER_NAME" | xargs -r docker rm -f || true
-                    '''
-                }
-            }
+    post {
+        success {
+            echo '🚀 Deployment successful!'
+        }
+        failure {
+            echo '❌ Deployment failed.'
         }
     }
 }
