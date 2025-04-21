@@ -2,6 +2,8 @@ version: '3.8'
 
 services:
   webapp:
+    build:
+      context: .
     image: ${APP_NAME:-chatapp}:v${APP_VERSION:-latest}
     container_name: ${APP_NAME:-chatapp}
     ports:
