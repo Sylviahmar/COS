@@ -1,43 +1,38 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    IMAGE_NAME = "chatapp"
-    CONTAINER_NAME = "chatapp"
-  }
+    stages {
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t chatapp:v1 .'
+            }
+        }
 
-  stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
+        stage('Run Tests') {
+            steps {
+                sh 'echo "Running tests..."'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying container using docker-compose...'
+                script {
+                    sh 'docker-compose down || true'
+                    sh 'docker-compose up -d --build'
+                }
+            }
+        }
+
+        stage('Cleanup Old Container (Optional)') {
+            steps {
+                echo 'Cleaning up old Docker containers...'
+                script {
+                    sh '''
+                        docker ps -aq --filter "name=chatapp" | xargs -r docker rm -f || true
+                    '''
+                }
+            }
+        }
     }
-
-    stage('Build Docker Image') {
-      steps {
-        sh 'docker build -t $IMAGE_NAME .'
-      }
-    }
-
-    stage('Run Tests') {
-      steps {
-        sh 'echo "No tests to run"'
-      }
-    }
-
-    stage('Deploy') {
-      steps {
-        sh '''
-          docker rm -f $CONTAINER_NAME || true
-          docker run -d --name $CONTAINER_NAME -p 3000:3000 $IMAGE_NAME
-        '''
-      }
-    }
-
-    stage('Cleanup Old Container (Optional)') {
-      steps {
-        echo 'Cleanup already handled before deploy stage.'
-      }
-    }
-  }
 }
