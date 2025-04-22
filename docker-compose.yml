@@ -1,15 +1,28 @@
 version: '3.8'
 
 services:
-  jenkins:
-    image: jenkins/jenkins:lts
-    container_name: my-jenkins
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${APP_NAME:-chatapp}:v${APP_VERSION:-latest}
+    container_name: ${APP_NAME:-chatapp_ci}
     ports:
-      - "8080:8080"   # Web UI
-      - "50000:50000" # Agent/Slave connections
-    volumes:
-      - jenkins_home:/var/jenkins_home
+      - "3001:3000"  # Ensure port 3001 is available on your host machine
     restart: unless-stopped
+    volumes:
+      - .:/app
+    networks:
+      - app-network
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
-volumes:
-  jenkins_home:
+networks:
+  app-network:
+    driver: bridge
